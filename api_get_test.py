@@ -16,7 +16,7 @@ get_times = []
 def main():
     "Main Function Block"
     url = ""
-    api_url1 = "https://api.nvidia.partners/edge/product/search?page=1&limit=9&locale=en-us&gpu=RTX%203060%20Ti"
+    api_url1 = "https://api.nvidia.partners/edge/product/search?page=1&limit=900&locale=en-us&sorting=lp&category=GPU&category_filter=GPU~77,Laptop~139,Studio-Laptop~13,NVLINKS~1"
     resp = nvidia_partners_get(url, api_url1)
 
 
@@ -49,7 +49,7 @@ def nvidia_partners_get(_, api_url) -> list:
 
     # find the product we want
     nvidia_api_result = []
-    print("Products from API:")
+    print(f"{len(products)} Products from API:")
     for product in products:
         product_title = product.get("productTitle")
         print(product_title)
