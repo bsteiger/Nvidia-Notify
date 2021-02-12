@@ -1,4 +1,3 @@
-"Testing if the api is broke"
 from time import perf_counter, sleep
 from statistics import mean
 import requests
@@ -6,6 +5,8 @@ from dotenv import load_dotenv
 from os import path, getenv, system
 import random
 from pprint import pprint
+from notifier import *
+import logging
 
 load_dotenv()
 MIN_DELAY = int(getenv('MIN_DELAY'))
@@ -52,9 +53,8 @@ def search_nvidia_partner(retailer):
         print(
             f"{retailer_name} check from NVIDIA Partner API result is not implemented yet"
         )
-
-        pass
-    pass
+    else:
+        print(f"Unsupported retailer {retailer_name}")
 
 
 def sleep_random_length(base_sleep=1,
