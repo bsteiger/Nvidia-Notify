@@ -17,6 +17,64 @@ display_names = [
 ]
 get_times = []
 
+site_props = {
+    "https://bestbuy.com": {
+        "keyword": "cart.svg",
+        "alert": True,
+        "method": "GET_SELENIUM"
+    },
+    "https://www.newegg.com": {
+        "keyword": "Add to cart",
+        "alert": True,
+        "method": "GET_URLLIB",
+    },
+    "https://www.bhphotovideo.com": {
+        "keyword": "Add to Cart",
+        "alert": True,
+        "method": "GET_URLLIB",
+    },
+    "https://www.evga.com": {
+        "keyword": "AddCart",
+        "alert": True,
+        "method": "GET_URLLIB",
+    },
+    "https://store.asus.com": {
+        "keyword": ">Buy Now<",
+        "alert": True,
+        "method": "GET_URLLIB",
+    }
+}
+
+
+def check_site(site):
+    "Checks the site url based on the properties given, sets off an alert if it's in stock"
+    print(
+        f"\tChecking{' ' + site.get('name') if site.get('name') is not None else ''}..."
+    )
+    try:
+        if site.get('method') == Methods.GET_SELENIUM:
+            if not USE_SELENIUM:
+                return
+            html = selenium_get(site.get('url'))
+        elif site.get('method') == Methods.GET_API:
+            if 'nvidia' in site.get('name').lower():
+                nvidia_get(site.get('url'), site.get('api'))
+            return
+        else:
+            html = urllib_get(site.get('url'))
+    except Exception as e:
+        print("\t\tConnection failed...")
+        print("\t\t{}".format(e))
+        return
+    keyword = site.get('keyword')
+    alert_on_found = site.get('alert', True)
+    index = html.upper().find(keyword.upper())
+    if alert_on_found and index != -1:
+        alert(site)
+    elif not alert_on_found and index == -1:
+        alert(site)
+    return
+
 
 def main():
     "Main Function Block"
@@ -28,33 +86,22 @@ def main():
 
 
 def search_nvidia_partner(retailer):
-    "Check on the retailer's website for stock"
+    "Check on the retailer's website for stock based on info returned by the NVIDIA Partners API"
     retailer_name = retailer.get("retailerName")
     purchase_link = retailer.get("purchaseLink")
     product_title = retailer.get("productTitle")
-    print(f"Checking stock for {product_title} at {retailer_name}...")
-    if 'https://www.microcenter.com' in retailer_name:
+    if site_props.get(retailer_name) is None:
         print(
-            f"{retailer_name} check from NVIDIA Partner API result is not implemented yet"
+            f"\t{retailer_name} fetch from Nvidia Partner API is not supported\n"
         )
-    if 'https://store.asus.com' in retailer_name:
-        print(
-            f"{retailer_name} check from NVIDIA Partner API result is not implemented yet"
-        )
-    if 'https://www.bhphotovideo.com' in retailer_name:
-        print(
-            f"{retailer_name} check from NVIDIA Partner API result is not implemented yet"
-        )
-    if 'https://www.newegg.com' in retailer_name:
-        print(
-            f"{retailer_name} check from NVIDIA Partner API result is not implemented yet"
-        )
-    if 'https://bestbuy.com' in retailer_name:
-        print(
-            f"{retailer_name} check from NVIDIA Partner API result is not implemented yet"
-        )
-    else:
-        print(f"Unsupported retailer {retailer_name}")
+        return
+    name = f"{retailer.get('productTitle')} at {purchase_link}"
+    site = {
+        **site_props.get(retailer_name), "url": purchase_link,
+        "name": name
+    }
+    check_site(site)
+    return
 
 
 def sleep_random_length(base_sleep=1,
@@ -96,7 +143,8 @@ def nvidia_partners_get(display_names, api_url) -> list:
             #     f'\tDirect Purchase Link: {retailer.get("directPurchaseLink")}'
             # )
 
-        if product_title.lower() in [name.lower() for name in display_names]:
+        # if product_title.lower() in [name.lower() for name in display_names]:
+        if 1 == 1:
             nvidia_api_result.extend(product.get("retailers"))
 
     print(f"{len(nvidia_api_result)} matching products found")
