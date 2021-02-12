@@ -12,7 +12,7 @@ load_dotenv()
 MIN_DELAY = int(getenv('MIN_DELAY'))
 MAX_DELAY = int(getenv('MAX_DELAY'))
 display_names = [
-    "EVGA RTX 3060 Tix", "EVGA RTX 3060 Tip", "NVIDIA GEFORCE RTX 3060 TI",
+    "ASUS TUF-RTX3080-10G-GAMING", "NVIDIA GEFORCE RTX 3060 TI",
     "PNY GeForce RTX 3070 8GB UPRISING Dual Fan"
 ]
 get_times = []
@@ -95,7 +95,7 @@ def search_nvidia_partner(retailer):
             f"\t{retailer_name} fetch from Nvidia Partner API is not supported\n"
         )
         return
-    name = f"{retailer.get('productTitle')} at {purchase_link}"
+    name = retailer.get('productTitle')
     site = {
         **site_props.get(retailer_name), "url": purchase_link,
         "name": name
@@ -134,17 +134,8 @@ def nvidia_partners_get(display_names, api_url) -> list:
     print(f"{len(products)} Products from API:")
     for product in products:
         product_title = product.get("productTitle")
-
-        print(product_title)
-        for retailer in product.get("retailers"):
-            print(f'\tRetailer Name: {retailer.get("retailerName")}')
-            # print(f'\tPurchase Link: {retailer.get("purchaseLink")}')
-            # print(
-            #     f'\tDirect Purchase Link: {retailer.get("directPurchaseLink")}'
-            # )
-
-        # if product_title.lower() in [name.lower() for name in display_names]:
-        if 1 == 1:
+        if product_title.lower() in [name.lower() for name in display_names]:
+            # if 1 == 1:
             nvidia_api_result.extend(product.get("retailers"))
 
     print(f"{len(nvidia_api_result)} matching products found")
