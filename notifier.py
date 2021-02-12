@@ -16,10 +16,12 @@ PLT_WIN = "Windows"
 PLT_LIN = "Linux"
 PLT_MAC = "Darwin"
 
+
 class Methods(str, Enum):
     GET_SELENIUM = "GET_SELENIUM"
     GET_URLLIB = "GET_URLLIB"
     GET_API = "GET_API"
+
 
 # Set up environment variables and constants. Do not modify this unless you know what you are doing!
 load_dotenv()
@@ -99,7 +101,8 @@ def os_notification(title, text):
     elif platform == PLT_LIN:
         try:
             icon_path = path.realpath('icon.ico')
-            system('notify-send "{}" "{}" -i {}'.format(title, text, icon_path))
+            system('notify-send "{}" "{}" -i {}'.format(
+                title, text, icon_path))
         except:
             # No system support for notify-send
             pass
@@ -107,7 +110,9 @@ def os_notification(title, text):
 
 def sms_notification(url):
     if USE_TWILIO:
-        client.messages.create(to=TWILIO_TO_NUM, from_=TWILIO_FROM_NUM, body=url)
+        client.messages.create(to=TWILIO_TO_NUM,
+                               from_=TWILIO_FROM_NUM,
+                               body=url)
 
 
 def discord_notification(product, url):
@@ -116,13 +121,16 @@ def discord_notification(product, url):
             "content": "{} in stock at {}".format(product, url),
             "username": "In Stock Alert!"
         }
-        result = requests.post(DISCORD_WEBHOOK_URL, data=json.dumps(data), headers={"Content-Type": "application/json"})
+        result = requests.post(DISCORD_WEBHOOK_URL,
+                               data=json.dumps(data),
+                               headers={"Content-Type": "application/json"})
         try:
             result.raise_for_status()
         except requests.exceptions.HTTPError as err:
             print(err)
         else:
-            print("Payload delivered successfully, code {}.".format(result.status_code))
+            print("Payload delivered successfully, code {}.".format(
+                result.status_code))
 
 
 def selenium_get(url):
@@ -137,7 +145,8 @@ def selenium_get(url):
         reload_count = 0
         driver.close()
         driver.quit()
-        driver = webdriver.Firefox(options=options, executable_path=WEBDRIVER_PATH)
+        driver = webdriver.Firefox(options=options,
+                                   executable_path=WEBDRIVER_PATH)
     return http
 
 
@@ -154,15 +163,48 @@ def urllib_get(url):
 def nvidia_get(url, api_url):
     response = requests.get(api_url, timeout=5)
     item = response.json()
-    if item['products']['product'][0]['inventoryStatus']['status'] != "PRODUCT_INVENTORY_OUT_OF_STOCK":
+    if item['products']['product'][0]['inventoryStatus'][
+            'status'] != "PRODUCT_INVENTORY_OUT_OF_STOCK":
         alert(url)
+
+
+def site_check(site):
+    "Checks the site url based on the properties given, sets off an alert if it's in stock"
+    print(
+        f"\tChecking{' ' + site.get('name') if site.get('name') is not None else ''}..."
+    )
+    try:
+        if site.get('method') == Methods.GET_SELENIUM:
+            if not USE_SELENIUM:
+                return
+            html = selenium_get(site.get('url'))
+        elif site.get('method') == Methods.GET_API:
+            if 'nvidia' in site.get('name').lower():
+                nvidia_get(site.get('url'), site.get('api'))
+            return
+        else:
+            html = urllib_get(site.get('url'))
+    except Exception as e:
+        print("\t\tConnection failed...")
+        print("\t\t{}".format(e))
+        return
+    keyword = site.get('keyword')
+    alert_on_found = site.get('alert', True)
+    index = html.upper().find(keyword.upper())
+    if alert_on_found and index != -1:
+        alert(site)
+    elif not alert_on_found and index == -1:
+        alert(site)
+    return
 
 
 def is_test():
     try:
         if sys.argv[1] == 'test':
             alert(sites[0])
-            print("Test complete, if you received notification, you're good to go.")
+            print(
+                "Test complete, if you received notification, you're good to go."
+            )
             return True
     except:
         return False
@@ -179,32 +221,8 @@ def main():
         print("Starting search {} at {}".format(search_count, current_time))
         search_count += 1
         for site in sites:
-            if site.get('enabled'):
-                print("\tChecking {}...".format(site.get('name')))
-
-                try:
-                    if site.get('method') == Methods.GET_SELENIUM:
-                        if not USE_SELENIUM:
-                            continue
-                        html = selenium_get(site.get('url'))
-                    elif site.get('method') == Methods.GET_API:
-                        if 'nvidia' in site.get('name').lower():
-                            nvidia_get(site.get('url'), site.get('api'))
-                        continue
-                    else:
-                        html = urllib_get(site.get('url'))
-                except Exception as e:
-                    print("\t\tConnection failed...")
-                    print("\t\t{}".format(e))
-                    continue
-                keyword = site.get('keyword')
-                alert_on_found = site.get('alert')
-                index = html.upper().find(keyword.upper())
-                if alert_on_found and index != -1:
-                    alert(site)
-                elif not alert_on_found and index == -1:
-                    alert(site)
-
+            if site.get('enabled', True):
+                site_check(site)
                 base_sleep = 1
                 total_sleep = base_sleep + random.uniform(MIN_DELAY, MAX_DELAY)
                 sleep(total_sleep)
