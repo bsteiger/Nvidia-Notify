@@ -38,6 +38,7 @@ ALERT_DELAY = int(getenv('ALERT_DELAY'))
 MIN_DELAY = int(getenv('MIN_DELAY'))
 MAX_DELAY = int(getenv('MAX_DELAY'))
 OPEN_WEB_BROWSER = getenv('OPEN_WEB_BROWSER') == 'true'
+NVIDIA_API_TIMEOUT = float(getenv('NVIDIA_API_TIMEOUT'))
 
 with open('sites.json', 'r') as f:
     sites = json.load(f)
@@ -161,7 +162,7 @@ def urllib_get(url):
 
 
 def nvidia_get(url, api_url):
-    response = requests.get(api_url, timeout=5)
+    response = requests.get(api_url, timeout=NVIDIA_API_TIMEOUT)
     item = response.json()
     if item['products']['product'][0]['inventoryStatus'][
             'status'] != "PRODUCT_INVENTORY_OUT_OF_STOCK":
